@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import StartRating from './StarRating';
 import { useMovies } from './useMovies';
+import { useLocalStorageState } from './useLocalStorageState';
+import { useKey } from './useKey';
 
 const average = arr =>
   arr.reduce((acc, cur, i, arr) => acc + cur / arr.length, 0);
@@ -10,13 +12,15 @@ const KEY = '4b5dc946';
 export default function App() {
   const [query, setQuery] = useState('');
   const [selectedId, setSelectedId] = useState(null);
+  const { movies, isLoading, error } = useMovies(query);
+  const [watched, setWatched] = useLocalStorageState([], 'watched');
 
   // const [watched, setWatched] = useState([]);
-  const [watched, setWatched] = useState(function () {
-    const storedMovies = JSON.parse(localStorage.getItem('watched'));
+  // const [watched, setWatched] = useState(function () {
+  //   const storedMovies = JSON.parse(localStorage.getItem('watched'));
 
-    return storedMovies;
-  });
+  //   return storedMovies;
+  // });
 
   function selectMovieHandler(id) {
     setSelectedId(id === selectedId ? null : id);
@@ -35,15 +39,6 @@ export default function App() {
   function deleteWatchedHandler(id) {
     setWatched(watch => watch.filter(movie => movie.imdbID !== id));
   }
-
-  useEffect(
-    function () {
-      localStorage.setItem('watched', JSON.stringify(watched));
-    },
-    [watched]
-  );
-
-  const { movies, isLoading, error } = useMovies(query);
 
   return (
     <>
@@ -171,20 +166,22 @@ function MovieDetails({ selectedId, onCloseMovie, onAddWatched, watched }) {
     };
   }, [title]);
 
-  useEffect(
-    function () {
-      function callBack(e) {
-        if (e.key === 'Escape') onCloseMovie();
-      }
+  useKey('Escape', onCloseMovie);
 
-      document.addEventListener('keydown', callBack);
+  // useEffect(
+  //   function () {
+  //     function callBack(e) {
+  //       if (e.key === 'Escape') onCloseMovie();
+  //     }
 
-      return function () {
-        document.removeEventListener('keydown', callBack);
-      };
-    },
-    [onCloseMovie]
-  );
+  //     document.addEventListener('keydown', callBack);
+
+  //     return function () {
+  //       document.removeEventListener('keydown', callBack);
+  //     };
+  //   },
+  //   [onCloseMovie]
+  // );
 
   return (
     <div className='details'>
@@ -261,20 +258,26 @@ function Logo() {
 function Search({ query, setQuery }) {
   const inputEl = useRef(null);
 
-  useEffect(() => {
-    const callBack = e => {
-      if (document.activeElement === inputEl.current) return;
+  useKey('Enter', function () {
+    if (document.activeElement === inputEl.current) return;
+    inputEl.current.focus();
+    setQuery('');
+  });
 
-      if (e.key === 'Enter') {
-        inputEl.current.focus();
-        setQuery('');
-      }
-    };
+  // useEffect(() => {
+  //   const callBack = e => {
+  //     if (document.activeElement === inputEl.current) return;
 
-    document.addEventListener('keydown', callBack);
+  //     if (e.key === 'Enter') {
+  //       inputEl.current.focus();
+  //       setQuery('');
+  //     }
+  //   };
 
-    return document.addEventListener('keydown', callBack);
-  }, [setQuery]);
+  //   document.addEventListener('keydown', callBack);
+
+  //   return document.addEventListener('keydown', callBack);
+  // }, [setQuery]);
 
   // useEffect(function () {
   //   const el = document.querySelector('.search');
